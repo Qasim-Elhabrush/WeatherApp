@@ -6,6 +6,40 @@ const currentTemperature = document.getElementById("currentTemperature");
 const time = document.getElementById("time");
 const date = document.getElementById("date");
 const location = document.getElementById("location");
+let hourlyGraphContainer=document.getElementById("hourlyGraphContainer");
+const hourlyData = {
+    time: [],
+    temperature: [],
+    weatherCode: [],
+}
+const WeatherInterpretationCode={
+    0:"Clear",
+    1:"Mainly Clear",
+    2:"Partly Cloudy",
+    3:"Overcast",
+    45:"Foggy",
+    48:"Foggy",
+    51:"Light Drizzle",
+    53:"Moderate Drizzle",
+    55:"Drizzle",
+    61:"Slight rain",
+    63:"Moderate rain",
+    65:"Heavy rain",
+    66:"Freezing rain" ,
+    67:"Freezing rain",
+    71:"Slight snow",
+    73:"Moderate snow",
+    75:"Heavy snow",
+    77:"Snow",
+    80:"Slight rain showers",
+    81:"Moderate showers",
+    82:"Violent rain showers",
+    85:"Slight snow showers",
+    86:"Heavy snow showers",
+    95:"Moderate thunderstorms",
+    96:"Thunderstorm",
+    99:"Thunderstorm",
+}
 //sets the time and date, and updates every second and minute respectively
 updateDate();
 updateTime();
@@ -56,13 +90,37 @@ const getCityState = async function(){
 
 //retrieves weather data from open-meteo
 const getWeather = async function(){
-    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}&current_weather=true&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,weathercode&temperature_unit=fahrenheit&timezone=${timezone}`,{mode: 'cors'})
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}&current_weather=true&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,weathercode&temperature_unit=fahrenheit&timezone=${timezone}&timeformat=unixtime`,{mode: 'cors'})
     const weatherData =  await response.json();
-    console.log(weatherData)
+    console.log(weatherData);    
     displayCurrentTemperature(weatherData.current_weather.temperature);
 
 
+    //formats time, and fixes arrays from full week to current time->rest of week
+    let timeData = formatTime(weatherData.hourly.time);     
+    let temperatureData = weatherData.hourly.temperature_2m;
+    let weatherCodeData = weatherData.hourly.weathercode;
+    let arrayDifference = temperatureData.length - timeData.length;
+    weatherCodeData.splice(0,arrayDifference);
+    temperatureData.splice(0,arrayDifference);
+    //takes the data from api and fills in hourlydata object
+    createHourlyData(timeData,temperatureData,weatherCodeData);
+    console.log(hourlyData);
+    displayHourlyData();
 
+
+
+}
+//changes time format from api array that is in unixtime to readable time
+function formatTime(hourArray){
+    let unixArray = hourArray;
+    let formattedArray = [];
+    unixArray.forEach(unixTime=>{
+        if(moment(unixTime).isAfter(moment().unix())){        
+        let formattedTime = moment(unixTime * 1000).format(`dddd h:mm a`);
+        formattedArray.push(formattedTime);}        
+    ;})
+    return formattedArray
 }
 
 
@@ -71,34 +129,70 @@ function displayCurrentTemperature(Temperature){
     currentTemperature.innerText=`${Temperature}°`;
 }
 
+//gets time, temperature and weather data from api then fills in hourly data object
+function createHourlyData(timeData,temperatureData,weatherCodeData){
+    for(let i = 0; i<timeData.length;i++){            
+            hourlyData.time.push(timeData[i]);
+            hourlyData.temperature.push(temperatureData[i]);
+            hourlyData.weatherCode.push(weatherCodeData[i]);
+    }
+}
 
+//Display Hourly Data
+function displayHourlyData(){
+    for(let i =0;i<hourlyData.time.length;i++){
+    let hourlyDataContainer = createHourlyDataContainer();
+    let hourlyDataDate = createHourlyDataDate(hourlyData.time[i]);
+    let hourlyDataTemperature = createHourlyDataTemperature(hourlyData.temperature[i]);
+    let hourlyDataWeatherDescriptor = createHourlyDataWeatherDescriptor(hourlyData.weatherCode[i]);
 
+    hourlyDataContainer.appendChild(hourlyDataDate);
+    hourlyDataContainer.appendChild(hourlyDataTemperature);
+    hourlyDataContainer.appendChild(hourlyDataWeatherDescriptor);
 
+    hourlyGraphContainer.appendChild(hourlyDataContainer);}
+}
+function createHourlyDataContainer(){
+    let hourlyDataContainer = document.createElement("div");
+    hourlyDataContainer.classList.add("hourDataContainer");
+    return hourlyDataContainer
+}
 
+function createHourlyDataDate(hourlyTimeData){
+    let hourlyDataDateContainer = document.createElement("div");
+    hourlyDataDateContainer.classList.add("hourDataDate");
+    hourlyDataDateContainer.innerText=hourlyTimeData;
+    return hourlyDataDateContainer
+}
+function createHourlyDataTemperature(hourlyTemperatureData){
+    let hourlyDataTemperatureContainer = document.createElement("div");
+    hourlyDataTemperatureContainer.classList.add("hourDataTemperature");
+    hourlyDataTemperatureContainer.innerText=`${hourlyTemperatureData}°`;
+    return hourlyDataTemperatureContainer
+    
+}
+function createHourlyDataWeatherDescriptor(hourlyWeatherData){
+    let hourlyWeatherDataCode = hourlyWeatherData;
+    let hourlyDataWeatherDescriptorContainer = document.createElement("div");
+    hourlyDataWeatherDescriptorContainer.classList.add("hourDataWeatherDescriptor");
+    let weatherCodeText = WeatherInterpretationCode[hourlyWeatherDataCode];
+    hourlyDataWeatherDescriptorContainer.innerText=weatherCodeText;
+    return hourlyDataWeatherDescriptorContainer
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//finds random int
 const randomInt = (min,max) => {
     let num = Math.random() * (max - min) + min;
     return Math.round(num);
 };
+
+//arrays to identify gifs based on weather code
 const sunshineGifIDs = [`uqpK3SuxEY4W9YQvdg`,`a342Mh0bNtoJEIrMJa`,`qZohEEh4bhuQ8`,`jk9L41aToGZQA`,`1Fm7jEapE18HwS6fkT`,`xUPGcjDsJA9Ki3ZqmY`,`THc9OBG5aZkqUKNuq8`,`a6wPWEJ0k8sPJIgLab`];
 const cloudyGifIDs = [`gs2ubveMcc2zPVNceK`,`42uCipbG9P4ZaXoum8`,`oNXIP3xpr00k05NVPQ`,`YbWRmFwlJ3PtuDa0BF`,`KV1s4kSJHaY3m`,`26gs87YcoCMeQFMcw`,`Ke7i5t6QDmDSO82Uga`];
 const rainGifIDs = [`t7Qb8655Z1VfBGr5XB`,`5PjafLZFxMWc`,`l0MYyhMKJGQEfSM8g`,`W9qCmeTuUoaFG`,`l0NwzT1BiNMyrzxM4`,`Ns4XGIO44IICMfsQOW`,`1ipRdxBacFXBjoov2f`];
 const snowGifIDs = [`3oFzm7xQje1yyQK3e0`,`zGJbfvlsg9KjC2VXyJ`,`iq3nJr0SbPTcDpInRf`,`3oKIP7W2zOcac3RvFe`,`Xi2Xu0MejhsUo`,`qjQN9kTe1zy8Uz5lhy`,`gH2bKIakvLuW4`];
+
+//display different gifs based on what the weather is
 function displayRandomSunshineGif(){
     let sunshineID=sunshineGifIDs[randomInt(0,7)];    
     getGif(`${sunshineID}`);
@@ -116,7 +210,7 @@ function displayRandomSnowGif(){
     getGif(`${snowID}`);
 }
 
-
+//function that retrieves a gif from giphy api
 const getGif = async function(searchword){
    const response = await fetch(`http://api.giphy.com/v1/gifs/${searchword}?api_key=Ts51RaqoXf5wG1cLgb7aXZfPTJMA00dv`, {mode: 'cors'})
    const Gifdata = await response.json();
@@ -126,7 +220,7 @@ const getGif = async function(searchword){
     }
     giphy.appendChild(img);}
 
-  displayRandomSnowGif();
+  displayRandomSunshineGif();
 
 
 

@@ -10,7 +10,10 @@ img{
   border-radius: 25px;
 }
 
+
+
 @media only screen and (max-width: 780px) {
+  
   body {
     margin: 0 auto;
     display: flex;
@@ -43,8 +46,9 @@ img{
     font-size: 3.5rem;
   }
   #date {
+    text-align: center;
     font-size: 1rem;
-    margin-left: 10%;
+    
   }
 
   #temperatureAndLocation {
@@ -103,9 +107,11 @@ img{
     text-align: center;
   }
   #hourlyGraphContainer {
+    display: flex;
+    overflow: scroll;
     height: 65%;
-    width: 94%;
-    margin-left: 3%;
+    max-width: 95vw;
+    margin-left: 2%;
     margin-top: 5%;
 
     background-color: beige;
@@ -114,6 +120,28 @@ img{
     border-radius: 25px;
     overflow-x: scroll;
   }
+  .hourDataContainer{
+    border-radius: 10px;
+     background-color: rgba(128, 128, 128, 0.434);
+     margin: 2%;
+     min-width: 29%;
+     min-height:86%;
+     display: grid;
+     grid-template-rows: 25% 50% 25%;
+     text-align: center;
+   }
+  
+  .hourDataDate{
+    font-size: 1.6rem;
+    
+  }
+  .hourDataTemperature{
+    font-size: 3.75rem;
+  }
+  .hourDataWeatherDescriptor{
+    font-size: 1.6rem;  
+  }
+
 
   #dailyTitle {
     font-size: 3rem;
@@ -139,6 +167,7 @@ img{
 
 
 @media only screen and (min-width: 780px) {
+ 
   body {
     margin: 0 auto;
    
@@ -173,13 +202,13 @@ img{
   }
 
   #temperatureAndLocation {
-    height: 30%;
+    height: 29.25%;
     display: grid;
     grid-template-columns: 50% 50%;
   }
   #temperatureAndLocationContainer {
     border-style: solid;
-    border-color: rgb(0, 0, 0);
+    border-color: rgba(0, 0, 0, 0.251);
     border-radius: 25px;
     width: 80%;
     margin-left: 10%;
@@ -198,7 +227,7 @@ img{
     height: 100%;
     margin-top: 10%;
     border-style: solid;
-    border-color: rgb(0, 0, 0);
+    border-color: rgba(0, 0, 0, 0.251);
     border-radius: 25px;
   }
   #currentTemperature {
@@ -224,10 +253,8 @@ img{
     text-align: center;
   }
 
-
-
-
   #hourlyForecast{
+    margin-top: 2%;
     grid-column: 2/3;
 
 }
@@ -237,15 +264,43 @@ img{
     text-align: center;
   }
   #hourlyGraphContainer {
+    display: flex;
     height: 80%;
     width: 94%;
-    margin-left: 3%;
-   
+    margin-left: 3%;   
     border-style: solid;
-    border-color: rgba(0, 0, 0, 0.086);
     border-radius: 25px;
-    overflow-x: scroll;
-  }#dailyForecast{
+    overflow: scroll;
+    border-color: rgba(0, 0, 0, 0.086);
+    
+  }
+  .hourDataContainer{
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.251);
+    border-radius: 10px;
+     margin: 2%;
+     min-width: 21%;
+     min-height:86%;
+     display: grid;
+     grid-template-rows: 25% 50% 25%;
+     text-align: center;
+     
+   }
+  .hourDataDate{
+    font-size: 1.9rem;
+    
+  }
+  .hourDataTemperature{
+  margin-top: 5%;
+    font-size: 5rem;
+  }
+  .hourDataWeatherDescriptor{
+    font-size: 1.5rem;  
+  }
+
+
+  
+  #dailyForecast{
     grid-column: 2/3;
     
 } #dailyTitle {
