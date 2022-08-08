@@ -1,13 +1,29 @@
 ::-webkit-scrollbar {
   display: none;
 }
-img{
+#giphyImg{
   margin-top: 5%;
   max-width: 90%;
   height: auto;
   min-height: 60%;
   max-width: 70%;
   border-radius: 25px;
+}
+
+#loading{
+  background-color: rgba(255, 255, 255, 0.408);
+  width:20vw;
+  height:35vh;
+  position: absolute;
+  z-index: 2;
+  opacity: .3;
+  border-radius: 30px;
+  margin: auto;
+left: 0;
+right: 0;
+top:40%;
+text-align: center;
+
 }
 
 
@@ -208,7 +224,7 @@ img{
   }
   #temperatureAndLocationContainer {
     border-style: solid;
-    border-color: rgba(0, 0, 0, 0.251);
+    border-color: rgba(0, 0, 0, 0.086);
     border-radius: 25px;
     width: 80%;
     margin-left: 10%;
@@ -227,7 +243,7 @@ img{
     height: 100%;
     margin-top: 10%;
     border-style: solid;
-    border-color: rgba(0, 0, 0, 0.251);
+    border-color: rgba(0, 0, 0, 0.086);
     border-radius: 25px;
   }
   #currentTemperature {
@@ -276,7 +292,7 @@ img{
   }
   .hourDataContainer{
     border-style: solid;
-    border-color: rgba(0, 0, 0, 0.251);
+    border-color: rgba(0, 0, 0, 0.086);
     border-radius: 10px;
      margin: 2%;
      min-width: 21%;
@@ -287,12 +303,12 @@ img{
      
    }
   .hourDataDate{
-    font-size: 1.9rem;
+    font-size: 1.5rem;
     
   }
   .hourDataTemperature{
   margin-top: 5%;
-    font-size: 5rem;
+    font-size: 4rem;
   }
   .hourDataWeatherDescriptor{
     font-size: 1.5rem;  
@@ -308,6 +324,7 @@ img{
     text-align: center;
   }
   #dailyScrollContainer {
+    display: flex;
     height: 80%;
     width: 94%;
     margin-left: 3%;
@@ -315,6 +332,44 @@ img{
     border-style: solid;
     border-color: rgba(0, 0, 0, 0.086);
     border-radius: 25px;
-    overflow-x: scroll;
+    overflow: scroll;
   }
+
+  .dailyDataContainer{
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.086);
+    border-radius: 10px;
+    min-width: 21%;
+    max-width: 25%;
+    height:auto;
+    margin: 2%;
+    display: grid;
+    grid-template-rows: 25% 50% 25%;
+    text-align: center;
+  }
+  .dayAndHighLow{
+    grid-row: 1/2;
+    display: grid;
+    grid-template-columns: 80% auto;
+  }
+  .day{
+    font-size: 1.5rem;
+    grid-column: 1/2;
+    margin-left: 15%;
+
+  }
+  .highLow{
+    font-size: 0.75rem;
+    grid-column: 2/3;    
+  }
+  .dailyTemperature{
+  margin-top: 10%;
+  font-size: 3.5rem;
+  grid-row: 2/3;
+}
+.dailyWeatherDescriptor{
+  font-size:1.5rem;
+  grid-row: 3/4;
+
+}
 }

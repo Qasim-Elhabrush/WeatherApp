@@ -7,11 +7,19 @@ const time = document.getElementById("time");
 const date = document.getElementById("date");
 const location = document.getElementById("location");
 let hourlyGraphContainer=document.getElementById("hourlyGraphContainer");
+const loading = document.getElementById("loading");
+const dailyScrollContainer = document.getElementById("dailyScrollContainer");
+
+
 const hourlyData = {
     time: [],
     temperature: [],
     weatherCode: [],
+    realtiveHumidity:[],
+    apparentTemperature:[],
 }
+
+//translates the weathercode obtained by the api to its string
 const WeatherInterpretationCode={
     0:"Clear",
     1:"Mainly Clear",
@@ -45,8 +53,9 @@ updateDate();
 updateTime();
 setInterval(updateDate,60000);
 setInterval(updateTime,1000);
+
 const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-console.log(timezone);
+
 
 function updateDate(){
     let currentDate = moment().format("dddd MMMM Do YYYY")
@@ -73,9 +82,20 @@ navigator.geolocation.getCurrentPosition(function(position){
 function updateUserLocationObject(latitude,longitude){
     userLocation.latitude=`${latitude}`;
     userLocation.longitude=`${longitude}`;
-    getWeather();
-    getCityState();
+    const locationResult =getCityState();
+    location.innerText=locationResult;
+    const hourlyWeatherResult = getHourlyWeather();
+    const dailyWeatherResult =getDailyWeather();
+    const promises = [locationResult,hourlyWeatherResult,dailyWeatherResult];
+    Promise.all(promises).then(()=>{
+        stopLoadingDisplay();})
 }
+
+function stopLoadingDisplay(){
+loading.remove();
+}
+
+
 
 
 
@@ -88,35 +108,48 @@ const getCityState = async function(){
 }
 
 
-//retrieves weather data from open-meteo
-const getWeather = async function(){
-    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}&current_weather=true&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,weathercode&temperature_unit=fahrenheit&timezone=${timezone}&timeformat=unixtime`,{mode: 'cors'})
+//retrieves hourly weather data from open-meteo
+const getHourlyWeather = async function(){
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,weathercode&temperature_unit=fahrenheit&timezone=${timezone}&timeformat=unixtime`,{mode: 'cors'})
     const weatherData =  await response.json();
-    console.log(weatherData);    
-    displayCurrentTemperature(weatherData.current_weather.temperature);
-
+    
 
     //formats time, and fixes arrays from full week to current time->rest of week
-    let timeData = formatTime(weatherData.hourly.time);     
+    let timeData = formatTimeHourly(weatherData.hourly.time);     
     let temperatureData = weatherData.hourly.temperature_2m;
     let weatherCodeData = weatherData.hourly.weathercode;
+    let relativeHumidityData= weatherData.hourly.relativehumidity_2m;
+    let apparentTemperatureData =weatherData.hourly.apparent_temperature;
+
     let arrayDifference = temperatureData.length - timeData.length;
     weatherCodeData.splice(0,arrayDifference);
     temperatureData.splice(0,arrayDifference);
+    weatherCodeData.splice(0,arrayDifference);
+    relativeHumidityData.splice(0,arrayDifference);
+    apparentTemperatureData.splice(0,arrayDifference);
+
+
+
+    let currentRelativeHumidity= weatherData.hourly.relativehumidity_2m[0];
+    let currentTemperatureHourly = weatherData.hourly.temperature_2m[0];
+    let currentApparentTemperature = weatherData.hourly.apparent_temperature[0];
+    currentTemperature.innerText=currentTemperatureHourly;
     //takes the data from api and fills in hourlydata object
     createHourlyData(timeData,temperatureData,weatherCodeData);
-    console.log(hourlyData);
     displayHourlyData();
-
-
+    console.log(weatherData);
+    console.log(currentRelativeHumidity);
+    console.log(currentTemperature);
+    console.log(currentApparentTemperature);
 
 }
+
 //changes time format from api array that is in unixtime to readable time
-function formatTime(hourArray){
+function formatTimeHourly(hourArray){
     let unixArray = hourArray;
     let formattedArray = [];
     unixArray.forEach(unixTime=>{
-        if(moment(unixTime).isAfter(moment().unix())){        
+        if(moment(unixTime).isAfter(moment().subtract(1,"hour").unix())){        
         let formattedTime = moment(unixTime * 1000).format(`dddd h:mm a`);
         formattedArray.push(formattedTime);}        
     ;})
@@ -124,14 +157,10 @@ function formatTime(hourArray){
 }
 
 
-//displays the current temperature on the page
-function displayCurrentTemperature(Temperature){
-    currentTemperature.innerText=`${Temperature}°`;
-}
 
 //gets time, temperature and weather data from api then fills in hourly data object
 function createHourlyData(timeData,temperatureData,weatherCodeData){
-    for(let i = 0; i<timeData.length;i++){            
+    for(let i = 1; i<timeData.length;i++){            
             hourlyData.time.push(timeData[i]);
             hourlyData.temperature.push(temperatureData[i]);
             hourlyData.weatherCode.push(weatherCodeData[i]);
@@ -180,6 +209,87 @@ function createHourlyDataWeatherDescriptor(hourlyWeatherData){
     return hourlyDataWeatherDescriptorContainer
 }
 
+
+async function getDailyWeather(){
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=${timezone}`,{mode: 'cors'})
+    const weatherData =  await response.json();
+    
+    
+    for(let i =0;i<7;i++){
+        //declaring variables from functions based on weather data
+        let formattedDay = formatTimeDaily(weatherData.daily.time[i]);
+        let dailyDataContainer = createDailyDataContainer();  
+        let dayAndHighLow = createDayAndHighLowContainer();
+        let highLow = createHighLow();
+        let day = createDay(formattedDay);
+        let dailyTemperature = createDailyTemperature(weatherData.daily.temperature_2m_max[i]);
+        let dailyWeatherDescription = createDailyWeatherDescription(weatherData.daily.weathercode[i]);        
+        //append day and high/low containers to the dayandhighlow container
+        dayAndHighLow.appendChild(day);
+        dayAndHighLow.appendChild(highLow);
+        //append children to the daily data container
+        dailyDataContainer.appendChild(dayAndHighLow);
+        dailyDataContainer.appendChild(dailyTemperature);
+        dailyDataContainer.appendChild(dailyWeatherDescription);
+        //appendthe daily data container to the common parent scrolling container
+        dailyScrollContainer.appendChild(dailyDataContainer);
+    }
+}
+
+//formats time to just give the day
+function formatTimeDaily(dailyTimeData){
+    let unformattedTime = dailyTimeData;
+    let formattedTime = moment(unformattedTime).format("dddd")
+    return formattedTime
+}
+//creates the daily data container and assigns its class
+function createDailyDataContainer(){
+    let dailyDatacontainer = document.createElement("div");
+    dailyDatacontainer.className="dailyDataContainer";
+    return dailyDatacontainer
+}
+//creates the day/high/low container and assigns its class
+function createDayAndHighLowContainer(){
+    let dayAndHighLowContainer = document.createElement("div");
+    dayAndHighLowContainer.className="dayAndHighLow"
+    return dayAndHighLowContainer
+}
+//creates the highLow and Day containers and assigns their classes and fills in their values, will display H Temperature by default
+function createHighLow(){
+    let highLow = document.createElement("div");
+    highLow.className ="highLow";
+    highLow.innerText="H"
+    return highLow
+}
+function createDay(formattedDay){
+    let day = document.createElement("div");
+    day.className="day";
+    day.innerText=formattedDay
+    return day
+}
+//creates the daily temperature container, assigns its class, and sets its inner text to the daily temperature
+function createDailyTemperature(temperatureData){
+    let dailyTemperature = document.createElement("div");
+    dailyTemperature.className="dailyTemperature"
+    dailyTemperature.innerText=`${temperatureData}°`;
+    return dailyTemperature
+}
+//creates weather description container and obtains its code by the api, then uses the interpretator object to fill in its text
+function createDailyWeatherDescription(weatherCodeData){
+    let dailyWeatherDescription = document.createElement("div");
+    dailyWeatherDescription.className="dailyWeatherDescriptor";
+    let descriptor = WeatherInterpretationCode[weatherCodeData]
+    dailyWeatherDescription.innerText=descriptor;
+    return dailyWeatherDescription
+}
+
+
+
+
+
+
+
+
 //finds random int
 const randomInt = (min,max) => {
     let num = Math.random() * (max - min) + min;
@@ -214,6 +324,7 @@ function displayRandomSnowGif(){
 const getGif = async function(searchword){
    const response = await fetch(`http://api.giphy.com/v1/gifs/${searchword}?api_key=Ts51RaqoXf5wG1cLgb7aXZfPTJMA00dv`, {mode: 'cors'})
    const Gifdata = await response.json();
+   img.id="giphyImg";
     img.src = Gifdata.data.images.original.url;
     while(giphy.firstChild){
         giphy.firstChild.remove();
