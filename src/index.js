@@ -394,7 +394,7 @@ function displayRandomSnowGif(){
 
 //function that retrieves a gif from giphy api
 const getGif = async function(searchword){
-   const response = await fetch(`http://api.giphy.com/v1/gifs/${searchword}?api_key=Ts51RaqoXf5wG1cLgb7aXZfPTJMA00dv`, {mode: 'cors'})
+   const response = await fetch(`https://api.giphy.com/v1/gifs/${searchword}?api_key=Ts51RaqoXf5wG1cLgb7aXZfPTJMA00dv`, {mode: 'cors'})
    const Gifdata = await response.json();
    img.id="giphyImg";
     img.src = Gifdata.data.images.original.url;
