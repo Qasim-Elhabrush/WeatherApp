@@ -9,8 +9,14 @@ const location = document.getElementById("location");
 let hourlyGraphContainer=document.getElementById("hourlyGraphContainer");
 const loading = document.getElementById("loading");
 const dailyScrollContainer = document.getElementById("dailyScrollContainer");
-
-
+const feelsLike = document.getElementById("feelsLike");
+const relativeHumidity = document.getElementById("relativeHumidity");
+const currentWeatherConditions = document.getElementById("currentWeatherConditions");
+const HorL = []
+const dailyTemperatureData = {
+    dailyHighTemperature : [],
+    dailyLowTemperature: []
+}
 const hourlyData = {
     time: [],
     temperature: [],
@@ -93,6 +99,7 @@ function updateUserLocationObject(latitude,longitude){
 
 function stopLoadingDisplay(){
 loading.remove();
+
 }
 
 
@@ -108,7 +115,7 @@ const getCityState = async function(){
 }
 
 
-//retrieves hourly weather data from open-meteo
+//retrieves hourly weather data from open-meteo and displays hourly/current weather
 const getHourlyWeather = async function(){
     const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}&hourly=temperature_2m,apparent_temperature,relativehumidity_2m,weathercode&temperature_unit=fahrenheit&timezone=${timezone}&timeformat=unixtime`,{mode: 'cors'})
     const weatherData =  await response.json();
@@ -128,20 +135,20 @@ const getHourlyWeather = async function(){
     relativeHumidityData.splice(0,arrayDifference);
     apparentTemperatureData.splice(0,arrayDifference);
 
-
-
+    //use current hourly value to fill in current weather info
     let currentRelativeHumidity= weatherData.hourly.relativehumidity_2m[0];
     let currentTemperatureHourly = weatherData.hourly.temperature_2m[0];
     let currentApparentTemperature = weatherData.hourly.apparent_temperature[0];
-    currentTemperature.innerText=currentTemperatureHourly;
+    currentTemperature.innerText=`${currentTemperatureHourly}°`;
+    let currentWeatherDescription = weatherCodeData[0];
+    updateCurrentWeatherGif(currentWeatherDescription);
+
     //takes the data from api and fills in hourlydata object
     createHourlyData(timeData,temperatureData,weatherCodeData);
     displayHourlyData();
-    console.log(weatherData);
-    console.log(currentRelativeHumidity);
-    console.log(currentTemperature);
-    console.log(currentApparentTemperature);
-
+    feelsLike.innerText=`Feel like ${currentApparentTemperature}°`;
+    relativeHumidity.innerText=`Relative Humidity: ${currentRelativeHumidity}%`;
+    currentWeatherConditions.innerText= WeatherInterpretationCode[weatherCodeData[0]];
 }
 
 //changes time format from api array that is in unixtime to readable time
@@ -209,7 +216,7 @@ function createHourlyDataWeatherDescriptor(hourlyWeatherData){
     return hourlyDataWeatherDescriptorContainer
 }
 
-
+//retrieves and deals with daily weather from meteo api
 async function getDailyWeather(){
     const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userLocation.latitude}&longitude=${userLocation.longitude}&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=${timezone}`,{mode: 'cors'})
     const weatherData =  await response.json();
@@ -223,7 +230,14 @@ async function getDailyWeather(){
         let highLow = createHighLow();
         let day = createDay(formattedDay);
         let dailyTemperature = createDailyTemperature(weatherData.daily.temperature_2m_max[i]);
-        let dailyWeatherDescription = createDailyWeatherDescription(weatherData.daily.weathercode[i]);        
+        dailyTemperatureData.dailyHighTemperature.push(`${weatherData.daily.temperature_2m_max[i]}°`);
+        dailyTemperatureData.dailyLowTemperature.push(`${weatherData.daily.temperature_2m_min[i]}°`)
+
+        let dailyWeatherDescription = createDailyWeatherDescription(weatherData.daily.weathercode[i]); 
+        //assign classes to connect the container event listener to the content in highlow/temperature
+
+
+
         //append day and high/low containers to the dayandhighlow container
         dayAndHighLow.appendChild(day);
         dayAndHighLow.appendChild(highLow);
@@ -246,6 +260,8 @@ function formatTimeDaily(dailyTimeData){
 function createDailyDataContainer(){
     let dailyDatacontainer = document.createElement("div");
     dailyDatacontainer.className="dailyDataContainer";
+    dailyDatacontainer.addEventListener("click",()=>{  
+        updateHighLowDisplay();})
     return dailyDatacontainer
 }
 //creates the day/high/low container and assigns its class
@@ -259,6 +275,7 @@ function createHighLow(){
     let highLow = document.createElement("div");
     highLow.className ="highLow";
     highLow.innerText="H"
+    HorL.push("H")
     return highLow
 }
 function createDay(formattedDay){
@@ -284,10 +301,40 @@ function createDailyWeatherDescription(weatherCodeData){
 }
 
 
+   
+    
+  
+function updateHighLowDisplay(){
+    if(HorL.pop() == "H"){
+        displayDailyLowTemperatures();
+    }
+    else{
+        displayDailyHighTemperatures();
+    }
+}
+function displayDailyLowTemperatures(){
+    let dailyTemperatures = document.getElementsByClassName("dailyTemperature");
+    for(let i = 0;i<dailyTemperatures.length;i++){
+        dailyTemperatures[i].innerText=dailyTemperatureData.dailyLowTemperature[i];
+    }
+    let HighLows = document.querySelectorAll(".highLow");
+    HighLows.forEach(element=>{
+        element.innerText="L"
+    })
+    HorL.push("L")
+}
+function displayDailyHighTemperatures(){
+    let dailyTemperatures = document.getElementsByClassName("dailyTemperature");
+    for(let i = 0;i<dailyTemperatures.length;i++){
+        dailyTemperatures[i].innerText=dailyTemperatureData.dailyHighTemperature[i];
+    }
+    let HighLows = document.querySelectorAll(".highLow");
+    HighLows.forEach(element=>{
+        element.innerText="H"
+    })
+    HorL.push("H");
 
-
-
-
+}
 
 
 //finds random int
@@ -296,12 +343,37 @@ const randomInt = (min,max) => {
     return Math.round(num);
 };
 
+
+//arrays to break down weather to match gif
+let sunshineCodes = [0,1,2];
+let cloudyCodes=[3,4,45,48,51,53,55];
+let rainyCodes=[61,63,65,66,67,80,81,82,95,96,99];
+let snowCodes=[56,57,71,73,75,77,85,86]
+
 //arrays to identify gifs based on weather code
 const sunshineGifIDs = [`uqpK3SuxEY4W9YQvdg`,`a342Mh0bNtoJEIrMJa`,`qZohEEh4bhuQ8`,`jk9L41aToGZQA`,`1Fm7jEapE18HwS6fkT`,`xUPGcjDsJA9Ki3ZqmY`,`THc9OBG5aZkqUKNuq8`,`a6wPWEJ0k8sPJIgLab`];
 const cloudyGifIDs = [`gs2ubveMcc2zPVNceK`,`42uCipbG9P4ZaXoum8`,`oNXIP3xpr00k05NVPQ`,`YbWRmFwlJ3PtuDa0BF`,`KV1s4kSJHaY3m`,`26gs87YcoCMeQFMcw`,`Ke7i5t6QDmDSO82Uga`];
 const rainGifIDs = [`t7Qb8655Z1VfBGr5XB`,`5PjafLZFxMWc`,`l0MYyhMKJGQEfSM8g`,`W9qCmeTuUoaFG`,`l0NwzT1BiNMyrzxM4`,`Ns4XGIO44IICMfsQOW`,`1ipRdxBacFXBjoov2f`];
 const snowGifIDs = [`3oFzm7xQje1yyQK3e0`,`zGJbfvlsg9KjC2VXyJ`,`iq3nJr0SbPTcDpInRf`,`3oKIP7W2zOcac3RvFe`,`Xi2Xu0MejhsUo`,`qjQN9kTe1zy8Uz5lhy`,`gH2bKIakvLuW4`];
 
+function updateCurrentWeatherGif(currentWeatherCode){
+    let code = currentWeatherCode;
+    if(sunshineCodes.includes(code)){
+        displayRandomSunshineGif();
+    }
+    else if(cloudyCodes.includes(code)){
+        displayRandomCloudyGif();
+    }
+    else if(rainyCodes.includes(code)){
+        displayRandomRainGif()
+    }
+    else if(snowCodes.includes(code)){
+        displayRandomSnowGif()
+    }
+    else{
+        displayRandomSunshineGif();}
+
+};
 //display different gifs based on what the weather is
 function displayRandomSunshineGif(){
     let sunshineID=sunshineGifIDs[randomInt(0,7)];    
@@ -331,7 +403,6 @@ const getGif = async function(searchword){
     }
     giphy.appendChild(img);}
 
-  displayRandomSunshineGif();
 
 
 
